@@ -2,71 +2,47 @@ version: "3.9"
 
 services:
   backend:
-    build:
-      context: ./backend
-    env_file:
-      - ./backend/.env
-    container_name: backend
-    restart: unless-stopped
-    networks:
-      - web
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: npm run start:dev
+    build: ./backend
+    container_name: slideshow-backend
+    env_file: .env
+    ports:
+      - "3000:3000"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`slideshow.hollenstein.xyz`) && PathPrefix(`/api`)"
+      - "traefik.enable=${TRAEFIK_ENABLE}"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=le"
-      - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
   frontend:
-    build:
-      context: ./frontend
-    container_name: frontend
-    restart: unless-stopped
-    networks:
-      - web
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=${VITE_API_URL}
+    build: ./frontend
+    container_name: slideshow-frontend
+    env_file: .env
     depends_on:
       - backend
-    command: npm run dev
+    ports:
+      - "5173:80"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`slideshow.hollenstein.xyz`)"
+      - "traefik.enable=${TRAEFIK_ENABLE}"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=le"
-      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
 
   traefik:
-    image: traefik:v2.12
+    image: traefik:v2.10
     container_name: traefik
-    restart: unless-stopped
+    profiles: ["production"]
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.le.acme.email=gabriel8mrd@outlook.com"
+      - "--certificatesresolvers.le.acme.httpchallenge=true"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.le.acme.email=${LE_EMAIL}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.le.acme.tlschallenge=true"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik_letsencrypt:/letsencrypt
-    networks:
-      - web
-
-networks:
-  web:
-    external: true
-
-volumes:
-  traefik_letsencrypt:
+      - ./letsencrypt:/letsencrypt
