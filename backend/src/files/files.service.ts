@@ -68,14 +68,24 @@ export class FilesService {
     }> {
         this.validateFile(file);
 
-        const webpFilename = file.filename.replace(extname(file.filename), '.webp');
-        const outputPath = join(UPLOADS_DIR, webpFilename);
+        const isImage =
+            file.mimetype.startsWith('image/') && file.mimetype !== 'image/gif';
+        let finalFilename = file.filename;
 
-        await sharp(file.path).webp({ quality: 80 }).toFile(outputPath);
-        await unlink(file.path);
+        if (isImage) {
+            const webpFilename = file.filename.replace(
+                extname(file.filename),
+                '.webp',
+            );
+            const outputPath = join(UPLOADS_DIR, webpFilename);
+
+            await sharp(file.path).webp({ quality: 80 }).toFile(outputPath);
+            await unlink(file.path);
+            finalFilename = webpFilename;
+        }
 
         return {
-            filename: webpFilename,
+            filename: finalFilename,
             originalName: file.originalname,
             size: file.size,
             mimeType: file.mimetype,
@@ -85,7 +95,14 @@ export class FilesService {
     async convertToWebp(
         filePath: string,
         originalFilename: string,
+        mimeType: string, // Pass mimetype to check
     ): Promise<string> {
+        const isImage = mimeType.startsWith('image/') && mimeType !== 'image/gif';
+
+        if (!isImage) {
+            return originalFilename;
+        }
+
         const webpFilename = originalFilename.replace(
             extname(originalFilename),
             '.webp',
