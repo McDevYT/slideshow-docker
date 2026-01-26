@@ -8,13 +8,19 @@ services:
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      # Entrypoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      # Global HTTP -> HTTPS Redirect
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Let's Encrypt Config
       - "--certificatesresolvers.le.acme.httpchallenge=true"
       - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.le.acme.email=${LE_EMAIL}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
     environment:
+      # FIX: Force Traefik to use a specific Docker API version
       - DOCKER_API_VERSION=1.44
     ports:
       - "80:80"
@@ -23,7 +29,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./letsencrypt:/letsencrypt
 
-backend:
+  backend:
     build:
       context: ./backend
       target: production
@@ -32,9 +38,13 @@ backend:
     env_file: .env
     labels:
       - "traefik.enable=true"
+      ## Router Config ##
+      # Routes https://domain.com/api/... to this container
       - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=le"
+      ## Service Config ##
+      # FIX: Tells Traefik to send traffic to port 3000 inside the container
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
   frontend:
@@ -42,6 +52,7 @@ backend:
       context: ./frontend
       target: production
       args:
+        # In Prod, frontend talks to API via the domain relative path
         - VITE_API_URL=/api
     container_name: slideshow-frontend
     restart: always
@@ -49,7 +60,11 @@ backend:
       - backend
     labels:
       - "traefik.enable=true"
+      ## Router Config ##
+      # Routes https://domain.com to this container
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=le"
+      ## Service Config ##
+      # FIX: Tells Traefik to send traffic to port 80 (Nginx default) inside
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
