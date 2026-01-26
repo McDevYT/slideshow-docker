@@ -1,0 +1,15 @@
+.slideshow {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.media {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* keeps aspect ratio and fits inside container */
+  object-position: center center; /* ensures centering */
+}
