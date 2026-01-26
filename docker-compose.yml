@@ -2,35 +2,40 @@ version: "3.9"
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: slideshow-backend
     env_file: .env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
     ports:
-      - "3000:3000"
+      - "3000:3000" # only for local dev; Traefik overrides in prod
     labels:
-      - "traefik.enable=${TRAEFIK_ENABLE}"
+      - "traefik.enable=${TRAEFIK_ENABLE:-false}"
       - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=le"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: slideshow-frontend
     env_file: .env
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - "5173:5173" # dev only
     labels:
-      - "traefik.enable=${TRAEFIK_ENABLE}"
+      - "traefik.enable=${TRAEFIK_ENABLE:-false}"
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=le"
 
   traefik:
-    image: traefik:v2.10
+    image: traefik:v2.12
     container_name: traefik
-    profiles: ["production"]
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
