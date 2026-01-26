@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      target: development # Switches to 'npm run start:dev'
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "3000:3000" # Expose 3000 locally
+    volumes:
+      - ./backend:/app # Sync code for hot reloading
+      - /app/node_modules # Prevent host node_modules from breaking container
+
+  frontend:
+    build:
+      target: development # Switches to 'npm run dev'
+    environment:
+      - VITE_API_URL=http://localhost:3000 # Local frontend talks to local backend
+    ports:
+      - "5173:5173" # Expose 5173 locally
+    volumes:
+      - ./frontend:/app # Sync code for hot reloading
+      - /app/node_modules
+
+  # We don't need Traefik in local dev usually, but if you leave it running 
+  # it won't hurt. We just expose the direct ports above to bypass it.
