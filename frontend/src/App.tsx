@@ -1,10 +1,10 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, BrowserRouter } from 'react-router';
 import Slideshow from './components/slideshow/Slideshow';
 import Manager from './components/manager/Manager';
 
 function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<Slideshow />} />
 
@@ -12,7 +12,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 

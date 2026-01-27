@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   traefik:
@@ -6,26 +6,25 @@ services:
     container_name: traefik
     restart: always
     command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--certificatesresolvers.le.acme.httpchallenge=true"
-      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.le.acme.email=${LE_EMAIL}"
-      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
+      - '--entrypoints.web.http.redirections.entryPoint.scheme=https'
+      - '--certificatesresolvers.le.acme.httpchallenge=true'
+      - '--certificatesresolvers.le.acme.httpchallenge.entrypoint=web'
+      - '--certificatesresolvers.le.acme.email=${LE_EMAIL}'
+      - '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json'
     environment:
       - DOCKER_API_VERSION=1.44
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./letsencrypt:/letsencrypt
-
-backend:
+  backend:
     build:
       context: ./backend
       target: production
@@ -33,17 +32,13 @@ backend:
     restart: always
     env_file: .env
     labels:
-      - "traefik.enable=true"
-      
-      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=le"
-      
-      - "traefik.http.middlewares.api-strip.stripprefix.prefixes=/api"
-      - "traefik.http.routers.backend.middlewares=api-strip"
-      
-      - "traefik.http.services.backend.loadbalancer.server.port=3000"
-
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)'
+      - 'traefik.http.routers.backend.entrypoints=websecure'
+      - 'traefik.http.routers.backend.tls.certresolver=le'
+      - 'traefik.http.middlewares.api-strip.stripprefix.prefixes=/api'
+      - 'traefik.http.routers.backend.middlewares=api-strip'
+      - 'traefik.http.services.backend.loadbalancer.server.port=3000'
   frontend:
     build:
       context: ./frontend
@@ -55,8 +50,8 @@ backend:
     depends_on:
       - backend
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=le"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)'
+      - 'traefik.http.routers.frontend.entrypoints=websecure'
+      - 'traefik.http.routers.frontend.tls.certresolver=le'
+      - 'traefik.http.services.frontend.loadbalancer.server.port=80'
