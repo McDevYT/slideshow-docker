@@ -1,30 +1,4 @@
 services:
-  traefik:
-    image: traefik:v2.11
-    container_name: traefik
-    restart: always
-    command:
-      - '--providers.docker=true'
-      - '--providers.docker.exposedbydefault=false'
-      - '--entrypoints.web.address=:80'
-      - '--entrypoints.websecure.address=:443'
-      - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
-      - '--entrypoints.web.http.redirections.entryPoint.scheme=https'
-      - '--certificatesresolvers.le.acme.httpchallenge=true'
-      - '--certificatesresolvers.le.acme.httpchallenge.entrypoint=web'
-      - '--certificatesresolvers.le.acme.email=${LE_EMAIL}'
-      - '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json'
-    environment:
-      - DOCKER_API_VERSION=1.44
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./letsencrypt:/letsencrypt
-    networks:
-      - default
-      - web-proxy
   backend:
     build:
       context: ./backend
@@ -58,6 +32,3 @@ services:
       - 'traefik.http.routers.frontend.entrypoints=websecure'
       - 'traefik.http.routers.frontend.tls.certresolver=le'
       - 'traefik.http.services.frontend.loadbalancer.server.port=80'
-networks:
-  web-proxy:
-    external: true
