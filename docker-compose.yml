@@ -16,6 +16,8 @@ services:
       - 'traefik.http.middlewares.api-strip.stripprefix.prefixes=/api'
       - 'traefik.http.routers.backend.middlewares=api-strip'
       - 'traefik.http.services.backend.loadbalancer.server.port=3000'
+    networks:
+      - web-proxy
   frontend:
     build:
       context: ./frontend
@@ -32,3 +34,5 @@ services:
       - 'traefik.http.routers.frontend.entrypoints=websecure'
       - 'traefik.http.routers.frontend.tls.certresolver=le'
       - 'traefik.http.services.frontend.loadbalancer.server.port=80'
+    networks:
+      - web-proxy
