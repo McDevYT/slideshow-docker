@@ -1,5 +1,5 @@
 # Base stage (Common for both)
-FROM node:20-alpine AS base
+FROM node:20 AS base
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -15,7 +15,7 @@ COPY . .
 RUN npm run build
 
 # Production stage (Final image)
-FROM node:20-alpine AS production
+FROM node:20 AS production
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev

@@ -56,20 +56,12 @@ export class SlideshowController {
 
     @Delete('loop')
     removeFromLoop(@Body() dto: FileDto) {
-        if (!this.filesService.fileExists(dto.file)) {
-            throw new BadRequestException('File does not exist');
-        }
-
         this.slideshowService.removeFromLoop(dto.file);
         return { message: `${dto.file} removed from loop` };
     }
 
     @Delete('queue')
     removeFromQueue(@Body() dto: FileDto) {
-        if (!this.filesService.fileExists(dto.file)) {
-            throw new BadRequestException('File does not exist');
-        }
-
         this.slideshowService.removeFromQueue(dto.file);
         return { message: `${dto.file} removed from queue` };
     }

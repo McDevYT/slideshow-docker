@@ -19,6 +19,7 @@ const Slideshow = () => {
     const [isVisible, setIsVisible] = useState(false);
     const timeoutRef = useRef<number | null>(null);
     const mountedRef = useRef(true);
+    const currentRef = useRef<Media | null>(null);
 
     const fetchNext = async (): Promise<Media | null> => {
         try {
@@ -68,6 +69,12 @@ const Slideshow = () => {
             return;
         }
 
+        if (currentRef.current && currentRef.current.file === next.file) {
+            // Same file, skip fade out/in and just continue the loop
+            runLoop();
+            return;
+        }
+
         try {
             await preload(next);
             
@@ -77,6 +84,7 @@ const Slideshow = () => {
                 await wait(FADE_DURATION);
                 
                 setCurrent(next);
+                currentRef.current = next;
 
                 requestAnimationFrame(() => {
                     setTimeout(() => {
@@ -99,6 +107,7 @@ const Slideshow = () => {
             if (initial) {
                 await preload(initial);
                 setCurrent(initial);
+                currentRef.current = initial;
                 setTimeout(() => setIsVisible(true), 100);
             }
             runLoop();
