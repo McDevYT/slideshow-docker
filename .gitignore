@@ -37,3 +37,7 @@ Thumbs.db
 # Misc
 .cache/
 .tmp/
+
+# Uploads
+backend/uploads/
+backend/deleted_uploads/

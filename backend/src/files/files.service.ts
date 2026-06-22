@@ -82,7 +82,12 @@ export class FilesService {
             const outputPath = join(UPLOADS_DIR, webpFilename);
             const tempOutputPath = join(UPLOADS_DIR, `temp-${webpFilename}`);
 
-            await sharp(file.path).webp({ quality: 80 }).toFile(tempOutputPath);
+            try {
+                await sharp(file.path).webp({ quality: 80 }).toFile(tempOutputPath);
+            } catch (error) {
+                await unlink(file.path);
+                throw new BadRequestException('Invalid image file');
+            }
             await unlink(file.path);
             renameSync(tempOutputPath, outputPath);
             finalFilename = webpFilename;
@@ -113,7 +118,12 @@ export class FilesService {
         );
         const outputPath = join(UPLOADS_DIR, webpFilename);
         const tempOutputPath = join(UPLOADS_DIR, `temp-${webpFilename}`);
-        await sharp(filePath).webp({ quality: 80 }).toFile(tempOutputPath);
+        try {
+            await sharp(filePath).webp({ quality: 80 }).toFile(tempOutputPath);
+        } catch (error) {
+            await unlink(filePath);
+            throw new BadRequestException('Invalid image file');
+        }
         await unlink(filePath);
         renameSync(tempOutputPath, outputPath);
         return webpFilename;
