@@ -4,7 +4,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
-import { existsSync, mkdirSync, readdirSync, unlinkSync, renameSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, unlinkSync, renameSync, copyFileSync } from 'fs';
 import { unlink } from 'fs/promises';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -80,9 +80,11 @@ export class FilesService {
                 '.webp',
             );
             const outputPath = join(UPLOADS_DIR, webpFilename);
+            const tempOutputPath = join(UPLOADS_DIR, `temp-${webpFilename}`);
 
-            await sharp(file.path).webp({ quality: 80 }).toFile(outputPath);
+            await sharp(file.path).webp({ quality: 80 }).toFile(tempOutputPath);
             await unlink(file.path);
+            renameSync(tempOutputPath, outputPath);
             finalFilename = webpFilename;
         }
 
@@ -110,8 +112,10 @@ export class FilesService {
             '.webp',
         );
         const outputPath = join(UPLOADS_DIR, webpFilename);
-        await sharp(filePath).webp({ quality: 80 }).toFile(outputPath);
+        const tempOutputPath = join(UPLOADS_DIR, `temp-${webpFilename}`);
+        await sharp(filePath).webp({ quality: 80 }).toFile(tempOutputPath);
         await unlink(filePath);
+        renameSync(tempOutputPath, outputPath);
         return webpFilename;
     }
 
@@ -136,8 +140,13 @@ export class FilesService {
         const deletedFilePath = join(DELETED_UPLOADS_DIR, filename);
         try {
             renameSync(filePath, deletedFilePath);
-        } catch {
-            throw new BadRequestException('Could not delete file');
+        } catch (error: any) {
+            if (error.code === 'EXDEV') {
+                copyFileSync(filePath, deletedFilePath);
+                unlinkSync(filePath);
+            } else {
+                throw new BadRequestException('Could not delete file');
+            }
         }
     }
 
@@ -170,8 +179,13 @@ export class FilesService {
         if (!existsSync(deletedPath)) throw new NotFoundException('File not found');
         try {
             renameSync(deletedPath, restoredPath);
-        } catch {
-            throw new BadRequestException('Could not restore file');
+        } catch (error: any) {
+            if (error.code === 'EXDEV') {
+                copyFileSync(deletedPath, restoredPath);
+                unlinkSync(deletedPath);
+            } else {
+                throw new BadRequestException('Could not restore file');
+            }
         }
     }
 }

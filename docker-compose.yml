@@ -8,6 +8,7 @@ services:
     env_file: .env
     volumes:
       - /uploads:/app/uploads 
+      - /deleted_uploads:/app/deleted_uploads
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)'
