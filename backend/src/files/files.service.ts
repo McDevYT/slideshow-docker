@@ -4,7 +4,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, unlinkSync, renameSync } from 'fs';
 import { unlink } from 'fs/promises';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -13,12 +13,14 @@ import {
     ALLOWED_MIME_TYPES,
     MAX_FILE_SIZE,
     UPLOADS_DIR,
+    DELETED_UPLOADS_DIR,
 } from 'src/scripts/consts';
 
 @Injectable()
 export class FilesService {
     ensureUploadsDirExists() {
         if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
+        if (!existsSync(DELETED_UPLOADS_DIR)) mkdirSync(DELETED_UPLOADS_DIR, { recursive: true });
     }
 
     fileExists(filename: string): boolean {
@@ -129,10 +131,47 @@ export class FilesService {
 
     deleteFile(filename: string) {
         const filePath = join(UPLOADS_DIR, filename);
+        if (!existsSync(filePath)) throw new NotFoundException('File not found');
+        this.ensureUploadsDirExists();
+        const deletedFilePath = join(DELETED_UPLOADS_DIR, filename);
+        try {
+            renameSync(filePath, deletedFilePath);
+        } catch {
+            throw new BadRequestException('Could not delete file');
+        }
+    }
+
+    getDeletedFilePath(filename: string): string {
+        const filePath = join(DELETED_UPLOADS_DIR, filename);
+        if (!existsSync(filePath)) throw new NotFoundException('File not found');
+        return filePath;
+    }
+
+    getAllDeletedFiles(): string[] {
+        try {
+            return readdirSync(DELETED_UPLOADS_DIR);
+        } catch {
+            return [];
+        }
+    }
+
+    permanentlyDeleteFile(filename: string) {
+        const filePath = join(DELETED_UPLOADS_DIR, filename);
         try {
             unlinkSync(filePath);
         } catch {
             throw new NotFoundException('File not found');
+        }
+    }
+
+    restoreFile(filename: string) {
+        const deletedPath = join(DELETED_UPLOADS_DIR, filename);
+        const restoredPath = join(UPLOADS_DIR, filename);
+        if (!existsSync(deletedPath)) throw new NotFoundException('File not found');
+        try {
+            renameSync(deletedPath, restoredPath);
+        } catch {
+            throw new BadRequestException('Could not restore file');
         }
     }
 }
